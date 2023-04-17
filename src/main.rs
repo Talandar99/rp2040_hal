@@ -1,13 +1,10 @@
-//! Blinks the LED on a Pico board
-//!
-//! This will blink an LED attached to GP25, which is the pin the Pico uses for the on-board LED.
 #![no_std]
 #![no_main]
 
 use bsp::entry;
 use defmt::*;
 use defmt_rtt as _;
-use embedded_hal::digital::v2::OutputPin;
+use embedded_hal::digital::v2::{InputPin, OutputPin};
 use panic_probe as _;
 
 // Provide an alias for our BSP so we can switch targets quickly.
@@ -58,16 +55,17 @@ fn main() -> ! {
     // Notably, on the Pico W, the LED is not connected to any of the RP2040 GPIOs but to the cyw43 module instead. If you have
     // a Pico W and want to toggle a LED with a simple GPIO output pin, you can connect an external
     // LED to one of the GPIO pins, and reference that pin here.
-    let mut led_pin = pins.led.into_push_pull_output();
-
+    //
+    //let mut led_pin = pins.led.into_push_pull_output();
+    let mut lcd_backlight = pins.gpio13.into_push_pull_output();
+    let mut lcd_user_key_a = pins.gpio15.into_pull_up_input();
+    let mut lcd_user_key_b = pins.gpio17.into_pull_up_input();
     loop {
-        info!("on!");
-        led_pin.set_high().unwrap();
-        delay.delay_ms(500);
-        info!("off!");
-        led_pin.set_low().unwrap();
-        delay.delay_ms(500);
+        if lcd_user_key_a.is_low().unwrap() || lcd_user_key_b.is_low().unwrap() {
+            lcd_backlight.set_high().unwrap();
+        } else {
+            lcd_backlight.set_low().unwrap();
+        }
+        delay.delay_ms(100);
     }
 }
-
-// End of file
